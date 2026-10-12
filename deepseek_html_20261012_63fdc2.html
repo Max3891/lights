@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数字小灯 · 一秒自动熄灭 · 清空输入</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(145deg, #1a1e2b 0%, #2a2f3f 100%);
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .card {
+      background: rgba(20, 24, 33, 0.85);
+      backdrop-filter: blur(8px);
+      border-radius: 3.5rem 3.5rem 2.5rem 2.5rem;
+      padding: 2rem 2.5rem 2.5rem 2.5rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .lights-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.6rem 2rem;
+      justify-items: center;
+      align-items: center;
+      margin-bottom: 2.5rem;
+    }
+
+    /* 每个灯泡容器 */
+    .light-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* 灯罩外壳 */
+    .bulb {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      background: #262c38;
+      box-shadow: 
+        inset 0 8px 8px rgba(0, 0, 0, 0.6),
+        inset 0 -4px 6px rgba(255, 255, 255, 0.05),
+        0 10px 15px -5px rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    /* 灯泡内发光核心 */
+    .glow {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: #1e222c;
+      box-shadow: inset 0 0 8px #0b0e12;
+      transition: all 0.25s cubic-bezier(0.2, 0.9, 0.4, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: #66788f;
+      text-shadow: 0 1px 2px black;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 亮起状态 — 小灯发光 */
+    .light-item.active .glow {
+      background: #ffd966;
+      color: #2d2a1e;
+      text-shadow: 0 0 6px #fff3c9, 0 0 12px #ffb347;
+      box-shadow: 
+        0 0 18px 4px #ffbb33,
+        0 0 30px 8px #ffaa00,
+        inset 0 0 12px #ffeeaa;
+      transition: all 0.15s ease;
+    }
+
+    /* 亮起时灯罩的外发光 */
+    .light-item.active .bulb {
+      box-shadow: 
+        inset 0 8px 8px rgba(0, 0, 0, 0.4),
+        inset 0 -4px 6px rgba(255, 255, 200, 0.2),
+        0 0 20px 2px #ffbb33,
+        0 12px 20px -5px black;
+    }
+
+    /* 数字标签 */
+    .label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #b0bedb;
+      letter-spacing: 0.5px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.2rem 0.9rem;
+      border-radius: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: inset 0 1px 3px #00000066;
+    }
+
+    /* 控制区域 */
+    .control-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+      margin-top: 0.4rem;
+    }
+
+    .input-area {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: #0d1017;
+      padding: 0.5rem 0.5rem 0.5rem 1.6rem;
+      border-radius: 60px;
+      box-shadow: inset 0 3px 8px #00000099, 0 5px 12px #0000004d;
+      border: 1px solid #2f3747;
+      transition: border-color 0.2s;
+    }
+
+    .input-area input {
+      background: transparent;
+      border: none;
+      outline: none;
+      width: 100px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #d6e2ff;
+      text-align: center;
+      letter-spacing: 2px;
+      caret-color: #ffb347;
+      transition: color 0.2s;
+    }
+
+    .input-area input::placeholder {
+      color: #4b5870;
+      font-weight: 400;
+      font-size: 1rem;
+      letter-spacing: 1px;
+    }
+
+    .input-area button {
+      background: #2e3a4e;
+      border: none;
+      color: #d6e2ff;
+      font-size: 1.6rem;
+      font-weight: 600;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #0a0d12, 0 8px 12px #00000066;
+      transition: all 0.08s ease;
+      line-height: 1;
+      padding: 0 0 4px 0;
+    }
+
+    .input-area button:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #0a0d12, 0 5px 10px #00000099;
+    }
+
+    .input-area button:hover {
+      background: #3d4b63;
+      color: #ffffff;
+    }
+
+    /* 提示 */
+    .hint {
+      color: #6d7b97;
+      font-size: 0.9rem;
+      letter-spacing: 0.3px;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .hint span {
+      background: #1e2533;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      color: #a5b6d9;
+      font-weight: 500;
+    }
+
+    /* 重置键 */
+    .reset-btn {
+      background: transparent;
+      border: 1px solid #445066;
+      color: #96a9cc;
+      padding: 0.4rem 1.6rem;
+      border-radius: 30px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-left: 0.5rem;
+      letter-spacing: 0.5px;
+    }
+
+    .reset-btn:hover {
+      background: #2b3344;
+      color: #e0eaff;
+      border-color: #6c86b0;
+    }
+
+    .status-badge {
+      font-size: 0.9rem;
+      color: #95a9cf;
+      background: #0f131c;
+      padding: 0.3rem 1.4rem;
+      border-radius: 30px;
+      border: 1px solid #28303f;
+      box-shadow: inset 0 1px 4px black;
+      transition: color 0.2s, border-color 0.2s;
+      min-height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 计时器进度小条 */
+    .timer-bar {
+      width: 100%;
+      height: 3px;
+      background: #252c3a;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 0.2rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .timer-bar.active {
+      opacity: 1;
+    }
+
+    .timer-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ffbb33, #ffd966);
+      border-radius: 10px;
+      transform-origin: left;
+      animation: countdown 1s linear forwards;
+    }
+
+    @keyframes countdown {
+      0% { transform: scaleX(1); }
+      100% { transform: scaleX(0); }
+    }
+
+    /* 主动发光的微脉冲 */
+    @keyframes softPulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.15); }
+      100% { filter: brightness(1); }
+    }
+
+    .light-item.active .glow {
+      animation: softPulse 0.8s infinite ease-in-out;
+    }
+
+    /* 输入框获取焦点时 */
+    .input-area:focus-within {
+      border-color: #4a5c7c;
+      box-shadow: inset 0 3px 8px #00000099, 0 5px 12px #0000004d, 0 0 0 2px rgba(255, 187, 51, 0.15);
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <!-- 八个小灯 -->
+  <div class="lights-grid" id="lightsGrid">
+    <div class="light-item" data-index="1">
+      <div class="bulb"><div class="glow">1</div></div>
+      <div class="label">①</div>
+    </div>
+    <div class="light-item" data-index="2">
+      <div class="bulb"><div class="glow">2</div></div>
+      <div class="label">②</div>
+    </div>
+    <div class="light-item" data-index="3">
+      <div class="bulb"><div class="glow">3</div></div>
+      <div class="label">③</div>
+    </div>
+    <div class="light-item" data-index="4">
+      <div class="bulb"><div class="glow">4</div></div>
+      <div class="label">④</div>
+    </div>
+    <div class="light-item" data-index="5">
+      <div class="bulb"><div class="glow">5</div></div>
+      <div class="label">⑤</div>
+    </div>
+    <div class="light-item" data-index="6">
+      <div class="bulb"><div class="glow">6</div></div>
+      <div class="label">⑥</div>
+    </div>
+    <div class="light-item" data-index="7">
+      <div class="bulb"><div class="glow">7</div></div>
+      <div class="label">⑦</div>
+    </div>
+    <div class="light-item" data-index="8">
+      <div class="bulb"><div class="glow">8</div></div>
+      <div class="label">⑧</div>
+    </div>
+  </div>
+
+  <!-- 控制区 -->
+  <div class="control-panel">
+    <div class="input-area">
+      <input type="text" id="numberInput" placeholder="1 ~ 8" maxlength="2" inputmode="numeric" autocomplete="off">
+      <button id="submitBtn" aria-label="点亮">↵</button>
+    </div>
+    <div class="hint">
+      <span>输入数字 1-8</span>
+      <button class="reset-btn" id="resetBtn">全部熄灭</button>
+    </div>
+    <div class="status-badge" id="statusMessage">等待输入...</div>
+    <div class="timer-bar" id="timerBar">
+      <div class="timer-fill" id="timerFill"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const lightItems = document.querySelectorAll('.light-item');
+    const inputField = document.getElementById('numberInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const statusMsg = document.getElementById('statusMessage');
+    const timerBar = document.getElementById('timerBar');
+    const timerFill = document.getElementById('timerFill');
+
+    // 保存当前激活的定时器，以便再次点亮时取消前一个
+    let activeTimeout = null;
+
+    // 清除所有定时器、熄灭所有灯、清空进度条，但不清空输入框（由具体逻辑决定）
+    function clearAllLightsAndTimer() {
+      if (activeTimeout) {
+        clearTimeout(activeTimeout);
+        activeTimeout = null;
+      }
+      // 移除所有灯的 active 类
+      lightItems.forEach(item => item.classList.remove('active'));
+      // 隐藏计时条
+      timerBar.classList.remove('active');
+      // 重置填充动画
+      timerFill.style.animation = 'none';
+      timerFill.offsetHeight; // 强制重绘
+      timerFill.style.animation = ''; // 恢复默认（但无动画运行）
+    }
+
+    // 点亮指定编号的灯，1秒后自动熄灭，并且输入框内容清空
+    function lightUpAndAutoOff(num) {
+      // 先清理之前的状态（定时器、亮灯、进度条）
+      clearAllLightsAndTimer();
+
+      // 验证数字
+      if (!Number.isInteger(num) || num < 1 || num > 8) {
+        statusMsg.textContent = `数字 ${num} 无效，请输入 1~8`;
+        return;
+      }
+
+      // 找到对应灯
+      const targetItem = Array.from(lightItems).find(
+        item => parseInt(item.dataset.index, 10) === num
+      );
+
+      if (!targetItem) {
+        statusMsg.textContent = `未找到编号为 ${num} 的小灯`;
+        return;
+      }
+
+      // 点亮灯
+      targetItem.classList.add('active');
+
+      // 显示计时条并重启动画
+      timerBar.classList.add('active');
+      // 重置动画：先移除动画，重绘后再添加
+      timerFill.style.animation = 'none';
+      timerFill.offsetHeight;
+      timerFill.style.animation = 'countdown 1s linear forwards';
+
+      statusMsg.textContent = `小灯 ${num} 亮起，1秒后自动熄灭...`;
+
+      // 关键：立即清空输入框内容（在点亮的同时输入框数字消失）
+      inputField.value = '';
+
+      // 设置定时器：1秒后熄灭该灯
+      activeTimeout = setTimeout(() => {
+        // 熄灭目标灯
+        targetItem.classList.remove('active');
+        // 隐藏计时条
+        timerBar.classList.remove('active');
+        // 更新状态信息
+        statusMsg.textContent = `小灯 ${num} 已自动熄灭`;
+        // 清除引用
+        activeTimeout = null;
+        // 重置timerFill的动画
+        timerFill.style.animation = 'none';
+      }, 1000);
+    }
+
+    // 处理输入提交
+    function handleSubmit() {
+      const rawValue = inputField.value.trim();
+      if (rawValue === '') {
+        statusMsg.textContent = '请输入一个数字 (1-8)';
+        return;
+      }
+
+      const num = Number(rawValue);
+      if (!Number.isInteger(num) || num < 1 || num > 8) {
+        statusMsg.textContent = `“${rawValue}” 不是 1~8 的整数`;
+        // 无效输入时，清空输入框并熄灭所有灯
+        inputField.value = '';
+        clearAllLightsAndTimer();
+        return;
+      }
+
+      // 有效数字，点亮并自动熄灭（内部会清空输入框）
+      lightUpAndAutoOff(num);
+    }
+
+    // 重置全部
+    function resetAll() {
+      // 清除定时器
+      if (activeTimeout) {
+        clearTimeout(activeTimeout);
+        activeTimeout = null;
+      }
+      // 熄灭所有灯
+      lightItems.forEach(item => item.classList.remove('active'));
+      // 隐藏进度条
+      timerBar.classList.remove('active');
+      timerFill.style.animation = 'none';
+      // 清空输入框
+      inputField.value = '';
+      // 更新状态
+      statusMsg.textContent = '所有灯已熄灭';
+      inputField.focus();
+    }
+
+    // 事件绑定
+    submitBtn.addEventListener('click', handleSubmit);
+
+    inputField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmit();
+      }
+    });
+
+    resetBtn.addEventListener('click', resetAll);
+
+    // 输入过滤：只允许数字，且限制最多2个字符
+    inputField.addEventListener('input', (e) => {
+      let val = e.target.value;
+      const digitsOnly = val.replace(/\D/g, '');
+      if (digitsOnly.length > 2) {
+        e.target.value = digitsOnly.slice(0, 2);
+      } else {
+        e.target.value = digitsOnly;
+      }
+      // 如果输入为空，仅提示，不影响点亮的灯
+      if (e.target.value === '') {
+        statusMsg.textContent = '输入为空，请输入1~8';
+      }
+    });
+
+    // 页面加载完成后聚焦输入框
+    window.addEventListener('load', () => {
+      inputField.focus();
+      statusMsg.textContent = '输入1~8，按回车或点击↵';
+    });
+  })();
+</script>
+</body>
+</html>
